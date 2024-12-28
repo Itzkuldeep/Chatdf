@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Q&A</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>Document Q&A</h1>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Upload PDF Documents</h2>
+        <input type="file" id="fileInput" multiple />
+        <button id="uploadBtn">Upload</button>
+
+        <h2>Ask a Question</h2>
+        <input type="text" id="questionInput" placeholder="Ask your question here..." />
+        <button id="askBtn">Ask</button>
+
+        <h3>Answer:</h3>
+        <p id="answer"></p>
+        <h3>Source:</h3>
+        <p id="source"></p>
+    </div>
+
+    <script>
+        let documentIds = [];
+
+        // Upload files
+        document.getElementById('uploadBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            const formData = new FormData();
+
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            const response = await fetch('http://localhost:8000/upload/', {
+                method: 'POST',
+                body: formData,
+            }, { mode: 'no-cors' });
+
+            const data = await response.json();
+            if (data.uploaded_files && data.uploaded_files.length > 0) {
+                documentIds = data.uploaded_files.map(file => file.document_id);
+                alert('Files uploaded successfully');
+            } else {
+                alert('Failed to upload files.');
+            }
+        });
+
+        // Ask a question
+        document.getElementById('askBtn').addEventListener('click', async () => {
+            if (documentIds.length === 0) {
+                alert('Please upload documents first.');
+                return;
+            }
+
+            const question = document.getElementById('questionInput').value;
+
+            const response = await fetch('http://localhost:8000/ask/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: question }),
+            });
+
+            const data = await response.json();
+            document.getElementById('answer').innerText = data.answer;
+            document.getElementById('source').innerText = data.source;
+        });
+    </script>
+</body>
+
+</html>
